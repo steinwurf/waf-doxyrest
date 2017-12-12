@@ -9,10 +9,12 @@ from waflib.TaskGen import feature
 
 top = '.'
 
+
 @feature('doxyrest')
 def dd(self):
+
     if not getattr(self, 'doxyfile', None):
-           self.generator.bld.fatal('no doxyfile??')
+        self.generator.bld.fatal('no doxyfile??')
 
     node = self.doxyfile
     if not isinstance(node, Node.Node):
@@ -25,6 +27,7 @@ def dd(self):
 
 DOXYREST = 'doxyrest-linux-1.1.0-amd64'
 
+
 def resolve(ctx):
 
     ctx.add_dependency(
@@ -34,6 +37,15 @@ def resolve(ctx):
         resolver='http',
         sources=['https://github.com/vovkos/doxyrest/releases/download/doxyrest-1.1.0/doxyrest-linux-1.1.0-amd64.tar.xz'],
         post_resolve=[{"type":"run", "command": "tar xvf doxyrest-linux-1.1.0-amd64.tar.xz"}])
+
+    ctx.add_dependency(
+        name='virtualenv',
+        recurse=False,
+        optional=False,
+        resolver='git',
+        method='checkout',
+        checkout='15.1.0',
+        sources=['github.com/pypa/virtualenv.git'])
 
 
 def options(opt):
@@ -83,6 +95,7 @@ def build(bld):
      if bld.options.run_tests:
         _pytest(bld=bld)
 
+
 def _pytest(bld):
 
     venv = _create_virtualenv(ctx=bld, cwd=bld.path.abspath())
@@ -91,7 +104,7 @@ def _pytest(bld):
 
         venv.pip_install('pytest', 'mock',
                          'pytest-testdirectory==2.1.0',
-                         'pep8', 'pyflakes')
+                         'pep8', 'pyflakes', 'sphinx')
 
         venv.env['PATH'] = os.path.pathsep.join(
             [venv.env['PATH'], os.environ['PATH']])
@@ -121,10 +134,10 @@ def _pytest(bld):
         venv.run(command)
 
         # Run PEP8 check
-        bld.msg("Running", "pep8")
-        venv.run('python -m pep8 --filename=*.py,wscript '
-                 'src test wscript buildbot.py')
+        # bld.msg("Running", "pep8")
+        # venv.run('python -m pep8 --filename=*.py,wscript '
+        #          'src test wscript buildbot.py')
 
         # Run pyflakes
         bld.msg("Running", "pyflakes")
-        venv.run('python -m pyflakes src test')
+        venv.run('python -m pyflakes test')
